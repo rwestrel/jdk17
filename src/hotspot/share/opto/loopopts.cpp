@@ -1110,7 +1110,7 @@ static bool merge_point_too_heavy(Compile* C, Node* region) {
   }
 }
 
-static bool merge_point_safe(Node* region) {
+bool PhaseIdealLoop::merge_point_safe(Node* region) {
   // 4799512: Stop split_if_with_blocks from splitting a block with a ConvI2LNode
   // having a PhiNode input. This sidesteps the dangerous case where the split
   // ConvI2LNode may become TOP if the input Value() does not
@@ -1133,6 +1133,28 @@ static bool merge_point_safe(Node* region) {
     }
   }
 #endif
+  {
+    ResourceMark rm;
+    Unique_Node_List wq;
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* n = region->fast_out(i);
+      if (has_ctrl(n) && get_ctrl(n) == region) {
+        wq.push(n);
+      }
+    }
+    for (uint i = 0; i < wq.size(); i++) {
+      Node* n = wq.at(i);
+      if (n->Opcode() == Op_Opaque1) {
+        return false;
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* u = n->fast_out(i);
+        if (has_ctrl(u) && get_ctrl(u) == region) {
+          wq.push(u);
+        }
+      }
+    }
+  }
   return true;
 }
 
