@@ -5353,7 +5353,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
-  if (least != early) {
+  if (least != early && n->Opcode() != Op_Opaque1 && !n->is_Cmp() && !n->is_Bool()) {
     Node* ctrl_out = least->unique_ctrl_out();
     if (ctrl_out && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl)) {
